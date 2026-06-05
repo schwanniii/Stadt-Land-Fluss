@@ -39,7 +39,7 @@ window.onload = function(){ //gespeicherte werte übernehmen
 
     zeitAnzeigen();
 
-    document.getElementById("p_Anzeige_reelleRunde").innerText = "Runde: " + (reelleRunde + 1); //runde updaten + anzeigen
+    document.getElementById("span_Anzeige_reelleRunde").innerText = "(" + (reelleRunde + 1) + ")"; //runde updaten + anzeigen
 
 
 
@@ -122,8 +122,6 @@ function updateBeispiele(){
 
 
 function rad(weiter){
-
-
     if(weiter === true && rundeZuZeigen < (alleBuchstaben.length - 1)){ //runden updaten
         if(rundeZuZeigen === reelleRunde){
             reelleRunde++;
@@ -139,11 +137,12 @@ function rad(weiter){
         localStorage.setItem("rundeZuZeigenSpeichern", JSON.stringify(rundeZuZeigen)); //rundeZuZeigen speichern
     }
 
-
-
+    updateBeispiele();
+ 
+    document.getElementById("div_Beispiele").replaceChildren(); //alle beispiele unten entfernen
+    
     buchstabenUpdaten();
 
-    updateBeispiele();
 
 
     // console.log("reelleRunde: " + reelleRunde);
@@ -152,34 +151,25 @@ function rad(weiter){
     // console.log("weiter: " + weiter);
 
     
-    document.getElementById("p_Anzeige_reelleRunde").innerText = "Runde: " + (reelleRunde + 1); //runde updaten + anzeigen
+    document.getElementById("span_Anzeige_reelleRunde").innerText = "(" + (reelleRunde + 1) + ")"; //runde updaten + anzeigen
 }
 
 function aktuelleRunde(){ //zur aktuellen Runde springen
     rundeZuZeigen = reelleRunde;
-    
+    localStorage.setItem("rundeZuZeigenSpeichern", JSON.stringify(rundeZuZeigen));
 
     buchstabenUpdaten();
 }
 
 function neuesSpielStarten(){
-    alleBuchstaben = new Array("A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"); //zurücksetzen
-
-    shuffle(alleBuchstaben);
-
     document.getElementById("div_Beispiele").replaceChildren(); //alle beispiele unten entfernen
-
-    
 
     reelleRunde = 0;
     localStorage.setItem("reelleRundeSpeichern", JSON.stringify(reelleRunde)); //reelleRunde speichern
     rundeZuZeigen = 0;
     localStorage.setItem("rundeZuZeigenSpeichern", JSON.stringify(rundeZuZeigen)); //rundeZuZeigen speichern
 
-    document.getElementById("p_Anzeige_reelleRunde").innerText = "Runde: 1"; //runde updaten zurücksetzen
-
-    localStorage.setItem("aktuellesSpiel", JSON.stringify(alleBuchstaben));
-
+    document.getElementById("span_Anzeige_reelleRunde").innerText = "(1)"; //runde updaten zurücksetzen
 
     buchstabenUpdaten();
 }
@@ -310,6 +300,70 @@ function generateDropdown() {
 
 generateDropdown();
 
+// Buchstaben generieren für das Orbit
+const container = document.getElementById('orbit-buchstaben-container');
+
+alleBuchstaben = new Array("A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z");
+
+alleBuchstaben.forEach((buchstabe, index) => {
+    const btn = document.createElement('button');
+    btn.textContent = buchstabe;
+    btn.classList.add('fliegender-buchstabe');
+
+    const winkel = ((index / 26) * 2 * Math.PI) - (Math.PI / 2);
+    const radiusX = 40 + Math.random() * 5; // Nutzt max. 45% der Bildschirmbreite nach links/rechts
+    const radiusY = 40 + Math.random() * 5; // Nutzt max. 45% der Bildschirmhöhe nach oben/unten
+
+    // Position absolut krisensicher in Prozent berechnen
+    const xProzent = 50 + Math.cos(winkel) * radiusX;
+    const yProzent = 50 + Math.sin(winkel) * radiusY;
+
+    btn.style.left = `${xProzent}%`;
+    btn.style.top = `${yProzent}%`;
+    btn.style.transform = 'translate(-50%, -50%)'; // Zentriert den Button perfekt auf seinem Punkt
+    
+    // Wir erstellen eine sanfte, individuelle Kreis-Bewegung via CSS-Variable oder direktem Keyframe-Ersatz
+    btn.style.animation = 'none'; // Schaltet das alte CSS-Schwanken aus
+    
+    // Ein leichtes, organisches Zittern/Kreisen simulieren:
+    const zufallZeit = 4 + Math.random() * 4; // 4 bis 8 Sekunden für eine sanfte Bewegung
+    btn.animate([
+        { transform: 'translate(-50%, -50%) translate(0px, 0px)' },
+        { transform: 'translate(-50%, -50%) translate(4px, -3px)' },
+        { transform: 'translate(-50%, -50%) translate(2px, 4px)' },
+        { transform: 'translate(-50%, -50%) translate(-4px, 2px)' },
+        { transform: 'translate(-50%, -50%) translate(0px, 0px)' }
+    ], {
+        duration: zufallZeit * 1000,
+        iterations: Infinity,
+        direction: 'alternate',
+        easing: 'ease-in-out'
+    });
+
+    btn.addEventListener('click', () => {
+        btn.classList.toggle('abgewaehlt');
+    });
+
+    container.appendChild(btn);
+});
+
+
+function holeAusgewählteBuchstaben(){
+    return Array.from(document.querySelectorAll('.fliegender-buchstabe:not(.abgewaehlt)'))
+                .map(btn => btn.textContent);
+}
+
+
+function seiteWechseln(zielSeite){
+    const seiten = document.getElementsByClassName("unterseite");
+
+    for(let i = 0; i < seiten.length; i++){
+        seiten[i].style.display = "none"; //alle seiten verstecken
+    }
+
+    document.getElementById(zielSeite).style.display = "flex"; //zielseite anzeigen
+}
+
 
 
 
@@ -319,12 +373,31 @@ generateDropdown();
 
 
 document.getElementById("button_neuesSpiel").addEventListener("click", function(){
-    let bestaetigung = confirm("neues Spiel starten?");
+    let bestaetigung = confirm("neues Spiel starten und zur Buchstabenauswahl navigieren?");
 
     if(bestaetigung){
-        neuesSpielStarten();
+        seiteWechseln("seite_buchstaben_auswählen");
     }
 });
+
+document.getElementById("btn_zur_seite_main").addEventListener("click", function(){
+    alleBuchstaben = holeAusgewählteBuchstaben();
+    console.log(alleBuchstaben);
+    if(alleBuchstaben.length === 0){
+        alert("Bitte wähle mindestens einen Buchstaben aus.");
+        return;
+    } else if(alleBuchstaben.length === 1){
+        document.getElementById("p_wievieleBuchstabenAusgewählt").innerText = "1 Buchstabe ausgewählt";
+    } else if(alleBuchstaben.length > 1 && alleBuchstaben.length <= 26){
+        document.getElementById("p_wievieleBuchstabenAusgewählt").innerText = alleBuchstaben.length + " Buchstaben ausgewählt";
+    }
+    shuffle(alleBuchstaben);
+    localStorage.setItem("aktuellesSpiel", JSON.stringify(alleBuchstaben));
+
+    seiteWechseln("seite_main");
+    neuesSpielStarten();
+});
+
 
 document.getElementById("p_Anzeige_buchstabe1").addEventListener("click", () => rad(false));
 document.getElementById("p_Anzeige_buchstabe2").addEventListener("click", () => rad(false));

@@ -7,39 +7,49 @@
     <title>Stadt-Land-Fluss</title>
 </head>
 <body>
-    <section class="section1">
-        <button id="button_neuesSpiel">neues Spiel</button>
-        <div id="div_containerBuchstaben">
-            <p id="p_Anzeige_buchstabe1"></p>
-            <p id="p_Anzeige_buchstabe2"></p>
-            <p id="p_Anzeige_buchstabe3">?</p>
-            <p id="p_Anzeige_buchstabe4">?</p>
-            <p id="p_Anzeige_buchstabe5">?</p>
+    <div id="seite_buchstaben_auswählen" class="unterseite">
+        <div class="zentrum-fokus">
+            <h1>Wähle die Buchstaben</h1>
+            <button id="btn_zur_seite_main">Fertig</button>
         </div>
-        <p id="p_Anzeige_reelleRunde">Runde: 1</p>
-        <p id="p_aktuelleRunde">aktuelle Runde</p>
-    </section>
 
-    <section class="section2">
-        <p id="p_Anzeige_Stoppuhr">0 : 0</p>
-        <div id="div_buttonsStoppuhr">
-            <button id="button_Stoppuhr_auslösen">Start</button>
-            <button id="button_manuellStoppuhrBeenden">Ende</button>
-        </div>
-        <input type="number" id="input_Stoppuhr_Zeit" placeholder="Zeit in min">
-    </section>
+        <div id="orbit-buchstaben-container"></div>
+    </div>
 
-    <section class="section3">
-        <div class="dropdown">
-            <button class="dropbtn">Wähle eine Kategorie</button>
-            <div class="dropdown-content" id="dropdownContent">
-                <!-- Dynamische Textinhalte werden hier generiert -->
+
+    <div id="seite_main" class="unterseite">
+        <section class="section1">
+            <button id="button_neuesSpiel">neues Spiel (zur Buchstabenauswahl)</button>
+            <p id="p_wievieleBuchstabenAusgewählt">0 Buchstaben ausgewählt</p>
+            <div id="div_containerBuchstaben">
+                <p id="p_Anzeige_buchstabe1"></p>
+                <p id="p_Anzeige_buchstabe2"></p>
+                <p id="p_Anzeige_buchstabe3">?</p>
+                <p id="p_Anzeige_buchstabe4">?</p>
+                <p id="p_Anzeige_buchstabe5">?</p>
             </div>
-        </div>
+            <p id="p_aktuelleRunde">zur aktuellen Runde <span id="span_Anzeige_reelleRunde">(1)</span></p>
+        </section>
 
-        <div id="div_Beispiele"></div>
-    </section>
+        <section class="section2">
+            <p id="p_Anzeige_Stoppuhr">0 : 0</p>
+            <div id="div_buttonsStoppuhr">
+                <button id="button_Stoppuhr_auslösen">Start</button>
+                <button id="button_manuellStoppuhrBeenden">Ende</button>
+            </div>
+            <input type="number" id="input_Stoppuhr_Zeit" placeholder="Zeit in min">
+        </section>
 
+        <section class="section3">
+            <div class="dropdown">
+                <button class="dropbtn">Wähle eine Kategorie</button>
+                <div class="dropdown-content" id="dropdownContent">
+                </div>
+            </div>
+
+            <div id="div_Beispiele"></div>
+        </section>
+    </div>
       <script type="module" src="index.js"></script>
 </body>
 </html>
