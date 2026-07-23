@@ -1,6 +1,6 @@
 <div align="center">
 
-# Stadt-Land-Fluss (Begleit-App)
+# Stadt-Land-Fluss (Begleiter-App)
 
 ## [im Browser öffnen →](https://schwanniii.github.io/Stadt-Land-Fluss/)
 
