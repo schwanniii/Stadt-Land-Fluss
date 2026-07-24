@@ -7,51 +7,94 @@
     <title>Stadt-Land-Fluss</title>
 </head>
 <body>
-    <div id="seite_buchstaben_auswählen" class="unterseite">
-        <div class="zentrum-fokus">
-            <h1>Wähle die Buchstaben</h1>
-            <button id="btn_zur_seite_main">Fertig</button>
-        </div>
-
-        <div id="orbit-buchstaben-container"></div>
-    </div>
-
-
+    <!-- HAUPTSEITE (Startmenü / Historie) -->
     <div id="seite_main" class="unterseite">
         <section class="game-controls">
-            <button id="button_neuesSpiel">neues Spiel (zur Buchstabenauswahl)</button>
+            <button id="button_neuesSpiel">Buchstaben auswählen <br> (Neues Spiel)</button>
             <p id="p_wievieleBuchstabenAusgewählt">26 Buchstaben ausgewählt</p>
         </section>
+
         <section class="section1">
+            <h2>Bisherige Runden</h2>
+            <div class="badge-runde">Runde <span id="span_Anzeige_reelleRunde">1</span></div>
+
             <div id="div_containerBuchstaben">
-                <p id="p_Anzeige_buchstabe1"></p>
-                <p id="p_Anzeige_buchstabe2"></p>
-                <p id="p_Anzeige_buchstabe3">?</p>
-                <p id="p_Anzeige_buchstabe4">?</p>
-                <p id="p_Anzeige_buchstabe5">?</p>
+                <div class="carousel-item" id="p_Anzeige_buchstabe1"></div>
+                <div class="carousel-item" id="p_Anzeige_buchstabe2"></div>
+                <div class="carousel-item main-item" id="p_Anzeige_buchstabe3">?</div>
+                <div class="carousel-item" id="p_Anzeige_buchstabe4">?</div>
+                <div class="carousel-item" id="p_Anzeige_buchstabe5">?</div>
             </div>
-            <p id="p_aktuelleRunde">zur aktuellen Runde <span id="span_Anzeige_reelleRunde">(1)</span>  →</p>
+            <button id="p_aktuelleRunde">Nächste Runde starten →</button>
         </section>
 
         <section class="section2">
-            <p id="p_Anzeige_Stoppuhr">0 : 0</p>
-            <div id="div_buttonsStoppuhr">
-                <button id="button_Stoppuhr_auslösen">Start</button>
-                <button id="button_manuellStoppuhrBeenden">Ende</button>
+            <h2>Timer-Einstellungen</h2>
+            <div class="timer-presets">
+                <button class="preset-btn" data-time="1.5">1:30</button>
+                <button class="preset-btn" data-time="2">2:00</button>
+                <button class="preset-btn" data-time="2.5">2:30</button>
+                <button class="preset-btn" data-time="3">3:00</button>
             </div>
-            <input type="number" id="input_Stoppuhr_Zeit" placeholder="Zeit in min">
+            <input type="number" id="input_Stoppuhr_Zeit" placeholder="Eigene Zeit (Minuten)" value="2">
         </section>
 
-        <section class="section3">
+        <section class="section3" style="display: none;">
             <div class="dropdown">
-                <button class="dropbtn">Beispiel-Lösungen</button>
-                <div class="dropdown-content" id="dropdownContent">
-                </div>
+                <button class="dropbtn" id="btn_dropdown_toggle">Beispiel-Lösungen ▼</button>
+                <div class="dropdown-content" id="dropdownContent"></div>
             </div>
-
+            <!-- Fett gedruckte Anzeige der aktiven Kategorie -->
+            <div id="div_AktiveKategorieTitel"></div>
             <div id="div_Beispiele"></div>
         </section>
     </div>
-      <script type="module" src="index.js"></script>
+
+    <!-- UNTERSEITE: BUCHSTABEN AUSWÄHLEN -->
+    <div id="seite_buchstaben_auswählen" class="unterseite" style="display: none;">
+        <div class="zentrum-fokus">
+            <h1>Buchstaben wählen</h1>
+            <button id="btn_zur_seite_main">Bestätigen</button>
+            <button id="btn_auswahl_zuruecksetzen">Alle auswählen</button>
+        </div>
+        <div id="orbit-buchstaben-container"></div>
+    </div>
+
+    <!-- OVERLAY: AKTIVE RUNDE -->
+    <div id="overlay_aktive_runde" class="fullscreen-overlay" style="display: none;">
+        <div id="countdown_spannung">3</div>
+
+        <div id="aktive_runde_content" style="display: none;">
+            <div class="directional-letters">
+                <div class="letter-box north"><span class="current-round-letter">?</span></div>
+                <div class="letter-box east"><span class="current-round-letter">?</span></div>
+                <div class="letter-box south"><span class="current-round-letter">?</span></div>
+                <div class="letter-box west"><span class="current-round-letter">?</span></div>
+            </div>
+
+            <div class="visual-timer-container">
+                <svg class="timer-svg" viewBox="0 0 200 200">
+                    <circle class="timer-circle-bg" cx="100" cy="100" r="85"></circle>
+                    <circle class="timer-circle-progress" cx="100" cy="100" r="85"></circle>
+                </svg>
+                <div id="p_Anzeige_Stoppuhr">02:00</div>
+            </div>
+
+            <button id="button_manuellStoppuhrBeenden">Runde vorzeitig beenden</button>
+        </div>
+    </div>
+
+    <!-- MODALES DIALOG-OVERLAY: SICHERHEITSABFRAGE -->
+    <div id="modal_sicherheitsabfrage" class="modal-overlay" style="display: none;">
+        <div class="modal-box">
+            <p>Möchtest du wirklich eine neue Runde starten?</p>
+            <div class="modal-buttons">
+                <button id="btn_confirm_ja">Ja</button>
+                <button id="btn_confirm_nein">Abbrechen</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="index.js"></script>
 </body>
 </html>

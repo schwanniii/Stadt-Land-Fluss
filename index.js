@@ -1,113 +1,119 @@
-var alleBuchstaben = Array("A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z");
-var reelleRunde = 0;
+var alleBuchstaben = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"];
+var reelleRunde = -1; 
 var rundeZuZeigen = 0;
-var ShowTimerMinutes;
-var timerSecondsTotal;
-var ShowTimerSeconds;
+var timerSecondsTotal = 120;
+var maxTimerSeconds = 120;
 let timerAktiv;
-let aktuelleKategorie;
+let aktuelleKategorie = null;
 import { daten } from "./daten.js";
+let audioCtx = null;
 
-
-
-
-
-window.onload = function(){ //gespeicherte werte übernehmen
+window.onload = function(){
     if(localStorage.getItem("aktuellesSpiel") != null){
         alleBuchstaben = JSON.parse(localStorage.getItem("aktuellesSpiel"));
     } else {
-        alleBuchstaben = new Array("A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"); //zurücksetzen
-
         shuffle(alleBuchstaben);
     }
-
     if(localStorage.getItem("rundeZuZeigenSpeichern") != null){
         rundeZuZeigen = JSON.parse(localStorage.getItem("rundeZuZeigenSpeichern"));
     } else {
         rundeZuZeigen = 0;
     }
-    
     if(localStorage.getItem("reelleRundeSpeichern") != null){
         reelleRunde = JSON.parse(localStorage.getItem("reelleRundeSpeichern"));
     } else {
-        reelleRunde = 0;
+        reelleRunde = -1;
     }
     
-
-
     buchstabenUpdaten();
-
-    zeitAnzeigen();
-
-    document.getElementById("span_Anzeige_reelleRunde").innerText = "(" + (reelleRunde + 1) + ")"; //runde updaten + anzeigen
-
-
-
-
-    // console.log(JSON.parse(localStorage.getItem("aktuellesSpiel"))); //testen
-    // console.log(JSON.parse(localStorage.getItem("rundeZuZeigenSpeichern"))); //testen
-    // console.log("real: " + JSON.parse(localStorage.getItem("reelleRundeSpeichern"))); //testen
-}
-
-
-
-
-
-
-function changeBackgroundColor(color){
-    document.body.style.background = color;
+    updateWievieleAusgewaehltAnzeige();
+    updateNeuesSpielButtonVisuals();
+    document.getElementById("span_Anzeige_reelleRunde").innerText = rundeZuZeigen + 1;
+    setupPresets();
+    generateDropdown();
+    buildOrbit();
+    setupDropdownToggle();
+    updateBeispiele(); // Initialer Check für Titel-Sichtbarkeit
 }
 
 function shuffle(array) {
-    let currentIndex = array.length;
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
 
-    while (currentIndex != 0) {
-
-      let randomIndex = Math.floor(Math.random() * currentIndex);
-      currentIndex--;
-
-      [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+function updateNeuesSpielButtonVisuals() {
+    const btn = document.getElementById("button_neuesSpiel");
+    const hatSchonGespielt = localStorage.getItem("hatSchonGespielt");
+    
+    if (!hatSchonGespielt && reelleRunde === -1) {
+        btn.classList.add("glitter-btn");
+    } else {
+        btn.classList.remove("glitter-btn");
     }
 }
 
 function buchstabenUpdaten(){
+    document.getElementById("span_Anzeige_reelleRunde").innerText = rundeZuZeigen + 1;
 
-    var ergebnisAnzeige = [document.getElementById("p_Anzeige_buchstabe1"), document.getElementById("p_Anzeige_buchstabe2"),
-        document.getElementById("p_Anzeige_buchstabe3"), document.getElementById("p_Anzeige_buchstabe4"), document.getElementById("p_Anzeige_buchstabe5")]; //alle referenzen
+    var ergebnisAnzeige = [
+        document.getElementById("p_Anzeige_buchstabe1"), document.getElementById("p_Anzeige_buchstabe2"),
+        document.getElementById("p_Anzeige_buchstabe3"), document.getElementById("p_Anzeige_buchstabe4"), 
+        document.getElementById("p_Anzeige_buchstabe5")
+    ];
 
-
-    for (let i = -2; i <= 2; i++) { //buchstaben updaten
+    for (let i = -2; i <= 2; i++) {
         let index = rundeZuZeigen + i;
-        let feld = ergebnisAnzeige[i + 2]; //das jeweilige Feld
+        let feld = ergebnisAnzeige[i + 2];
+        if(!feld) continue;
 
         feld.classList.remove("aktuelles_Feld");
 
         if (index < 0 || index >= alleBuchstaben.length) {
-            feld.innerText = ""; // Verhindert Fehler, falls Index außerhalb des Arrays
+            feld.innerText = "";
         } else if (index > reelleRunde) {
-            feld.innerText = "?"; // Falls noch nicht freigeschaltet
+            feld.innerText = "?";
         } else {
-            feld.innerText = alleBuchstaben[index]; // Normale Anzeige
-
-            if(index === reelleRunde){ //klasse adden
+            feld.innerText = alleBuchstaben[index];
+            if(index === reelleRunde){
                 feld.classList.add("aktuelles_Feld");
             }
         }
     }
 }
 
+// Zentralisierte Funktion: Steuert Beispiele UND die Sichtbarkeit der Überschrift
 function updateBeispiele(){
-    if(!aktuelleKategorie){
-        return;
+    // Findet die Sektion über die Klasse statt über eine ID
+    const gesamtSektion = document.querySelector(".section3");
+    const titelAnzeige = document.getElementById("div_AktiveKategorieTitel");
+    const container = document.getElementById("div_Beispiele");
+
+    // Versteckt die gesamte Sektion, solange noch keine Runde gespielt wurde
+    if (reelleRunde === -1) {
+        if (gesamtSektion) gesamtSektion.style.display = "none";
+        return; 
+    } else {
+        if (gesamtSektion) gesamtSektion.style.display = "block"; 
     }
 
-    let kategorie = aktuelleKategorie;
-    const container = document.getElementById("div_Beispiele");
-    const beispieleArray = daten[alleBuchstaben[rundeZuZeigen].toLowerCase()][kategorie.toLowerCase()];
-
+    // Wenn keine Kategorie aktiv ist oder in die Zukunft geblättert wurde, Titel leeren
+    if(!aktuelleKategorie || rundeZuZeigen > reelleRunde || !alleBuchstaben[rundeZuZeigen]) {
+        titelAnzeige.style.display = "none";
+        container.replaceChildren();
+        return;
+    }
+    
+    titelAnzeige.innerText = aktuelleKategorie;
+    titelAnzeige.style.display = "block";
+    
+    const buchstabeKey = alleBuchstaben[rundeZuZeigen].toLowerCase();
     container.replaceChildren();
-
-    if (beispieleArray && beispieleArray.length > 0) {
+    
+    // Beispiele aus der daten.js laden
+    if(daten[buchstabeKey] && daten[buchstabeKey][aktuelleKategorie.toLowerCase()]){
+        const beispieleArray = daten[buchstabeKey][aktuelleKategorie.toLowerCase()];
         beispieleArray.forEach(beispiel => {
             const p = document.createElement("p");
             p.textContent = beispiel;
@@ -118,294 +124,319 @@ function updateBeispiele(){
     }
 }
 
-
-
-
 function rad(weiter){
-    if(weiter === true && rundeZuZeigen < (alleBuchstaben.length - 1)){ //runden updaten
+    if(weiter === true && rundeZuZeigen < (alleBuchstaben.length - 1)){
         if(rundeZuZeigen === reelleRunde){
-            reelleRunde++;
-            localStorage.setItem("reelleRundeSpeichern", JSON.stringify(reelleRunde)); //reelleRunde speichern
-            rundeZuZeigen++;
-            localStorage.setItem("rundeZuZeigenSpeichern", JSON.stringify(rundeZuZeigen)); //rundeZuZeigen speichern
+            zeigeSicherheitsabfrage();
+            return;
         }else{
             rundeZuZeigen++;
-            localStorage.setItem("rundeZuZeigenSpeichern", JSON.stringify(rundeZuZeigen)); //rundeZuZeigen speichern
         }
     } else if(weiter === false && rundeZuZeigen > 0){
         rundeZuZeigen--;
-        localStorage.setItem("rundeZuZeigenSpeichern", JSON.stringify(rundeZuZeigen)); //rundeZuZeigen speichern
     }
-
-    updateBeispiele();
- 
-    document.getElementById("div_Beispiele").replaceChildren(); //alle beispiele unten entfernen
     
-    buchstabenUpdaten();
-
-
-
-    // console.log("reelleRunde: " + reelleRunde);
-    // console.log("rundeZuZeigen: " + rundeZuZeigen);
-
-    // console.log("weiter: " + weiter);
-
-    
-    document.getElementById("span_Anzeige_reelleRunde").innerText = "(" + (reelleRunde + 1) + ")"; //runde updaten + anzeigen
-}
-
-function aktuelleRunde(){ //zur aktuellen Runde springen
-    rundeZuZeigen = reelleRunde;
     localStorage.setItem("rundeZuZeigenSpeichern", JSON.stringify(rundeZuZeigen));
-
+    updateBeispiele();
     buchstabenUpdaten();
 }
 
-function neuesSpielStarten(){
-    document.getElementById("div_Beispiele").replaceChildren(); //alle beispiele unten entfernen
-
-    reelleRunde = 0;
-    localStorage.setItem("reelleRundeSpeichern", JSON.stringify(reelleRunde)); //reelleRunde speichern
-    rundeZuZeigen = 0;
-    localStorage.setItem("rundeZuZeigenSpeichern", JSON.stringify(rundeZuZeigen)); //rundeZuZeigen speichern
-
-    document.getElementById("span_Anzeige_reelleRunde").innerText = "(1)"; //runde updaten zurücksetzen
-
-    buchstabenUpdaten();
+function zeigeSicherheitsabfrage() {
+    document.getElementById("modal_sicherheitsabfrage").style.display = "flex";
 }
+document.getElementById("btn_confirm_ja").addEventListener("click", () => {
+    document.getElementById("modal_sicherheitsabfrage").style.display = "none";
+    starteAktiveRundeFlow();
+});
+document.getElementById("btn_confirm_nein").addEventListener("click", () => {
+    document.getElementById("modal_sicherheitsabfrage").style.display = "none";
+});
 
-
-
-
-
-function StoppuhrAuslösen(){
-    changeBackgroundColor("white");
-
-    if(document.getElementById("input_Stoppuhr_Zeit").value > 0){
-    ShowTimerMinutes = document.getElementById("input_Stoppuhr_Zeit").value; //timer Minuten insgesamt
-    } else{
-    ShowTimerMinutes = 2;
+function starteAktiveRundeFlow() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } else if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
     }
 
-    timerSecondsTotal = ShowTimerMinutes * 60; //timer Sekunden insgesamt
-
-    timerSecondsTotal++ //für die erste sekunde anzeigen
-    StoppuhrUpdaten();
-
-    if(timerAktiv === undefined){
-    timerAktiv = setInterval(StoppuhrUpdaten, 1000); //timer aktivieren (kann nur einmal ausgeführt werden)
-    }
-}
-
-function StoppuhrUpdaten(){
-    timerSecondsTotal--;
-    ShowTimerMinutes = Math.trunc(timerSecondsTotal / 60);
-    ShowTimerSeconds = timerSecondsTotal - (ShowTimerMinutes * 60); //showTimerMinutes und showTimerSeconds
-
-    if(ShowTimerMinutes <= 0 && ShowTimerSeconds <= 0){ //wenn beides = 0, reset
-        clearInterval(timerAktiv);
-        timerAktiv = undefined;
-        changeBackgroundColor("orange");
-        wecker();
+    let naechsteRundeIndex = reelleRunde + 1;
+    if (naechsteRundeIndex >= alleBuchstaben.length) {
+        alert("Alle ausgewählten Buchstaben wurden bereits gespielt!");
+        return;
     }
 
-    if(ShowTimerMinutes < 10){
-        ShowTimerMinutes = "0" + ShowTimerMinutes; //2:0 -> 02:00
-    }
-    if(ShowTimerSeconds < 10){
-        ShowTimerSeconds = "0" + ShowTimerSeconds;
-    }
+    localStorage.setItem("hatSchonGespielt", "true");
 
-    document.getElementById("p_Anzeige_Stoppuhr").innerText = ShowTimerMinutes + " : " + ShowTimerSeconds; //zeit anzeigen
+    reelleRunde = naechsteRundeIndex;
+    rundeZuZeigen = reelleRunde;
+    
+    localStorage.setItem("reelleRundeSpeichern", JSON.stringify(reelleRunde));
+    localStorage.setItem("rundeZuZeigenSpeichern", JSON.stringify(rundeZuZeigen));
+    updateNeuesSpielButtonVisuals();
 
-    //console.log(ShowTimerMinutes, ShowTimerSeconds, timerSecondsTotal, timerAktiv); //testen
-}
+    // Beispiele und Titel beim Start einer neuen Runde komplett zurücksetzen
+    aktuelleKategorie = null;
+    updateBeispiele();
 
-function StoppuhrBeenden(){ //alles resetten
-    clearInterval(timerAktiv);
+    document.getElementById("seite_main").style.display = "none";
 
-    timerAktiv = undefined;
-
-    changeBackgroundColor("white");
-
-    zeitAnzeigen();
-}
-
-function zeitAnzeigen(){
-    if(document.getElementById("input_Stoppuhr_Zeit").value > 0){
-        ShowTimerMinutes = document.getElementById("input_Stoppuhr_Zeit").value; //timer Minuten insgesamt
-        } else{
-        ShowTimerMinutes = 2;
+    const overlay = document.getElementById("overlay_aktive_runde");
+    const countdownEl = document.getElementById("countdown_spannung");
+    const contentEl = document.getElementById("aktive_runde_content");
+    
+    overlay.style.display = "flex";
+    countdownEl.style.display = "flex";
+    contentEl.style.display = "none";
+    
+    let inputTime = parseFloat(document.getElementById("input_Stoppuhr_Zeit").value);
+    if (isNaN(inputTime) || inputTime <= 0) inputTime = 2;
+    timerSecondsTotal = Math.round(inputTime * 60);
+    maxTimerSeconds = timerSecondsTotal;
+    
+    let countdownZaehler = 3;
+    countdownEl.innerText = countdownZaehler;
+    
+    let countdownInterval = setInterval(() => {
+        countdownZaehler--;
+        if (countdownZaehler > 0) {
+            countdownEl.innerText = countdownZaehler;
+        } else {
+            clearInterval(countdownInterval);
+            countdownEl.style.display = "none";
+            contentEl.style.display = "flex";
+            
+            const aktuellerBuchstabe = alleBuchstaben[reelleRunde];
+            document.querySelectorAll(".current-round-letter").forEach(el => {
+                el.innerText = aktuellerBuchstabe;
+            });
+            
+            StoppuhrUpdatenAnzeige();
+            timerAktiv = setInterval(StoppuhrTicker, 1000);
         }
-    
-    timerSecondsTotal = ShowTimerMinutes * 60; //timer Sekunden insgesamt
+    }, 1000);
+}
 
-    ShowTimerMinutes = Math.trunc(timerSecondsTotal / 60);
-    ShowTimerSeconds = timerSecondsTotal - (ShowTimerMinutes * 60); //showTimerMinutes und showTimerSeconds
+function StoppuhrTicker() {
+    timerSecondsTotal--;
+    StoppuhrUpdatenAnzeige();
 
-    if(ShowTimerMinutes < 10){
-        ShowTimerMinutes = "0" + ShowTimerMinutes; //2:0 -> 02:00
+    if(timerSecondsTotal <= 0){
+        clearInterval(timerAktiv);
+        wecker();
+        zeigeRundenEndeStatus();
     }
-    if(ShowTimerSeconds < 10){
-        ShowTimerSeconds = "0" + ShowTimerSeconds;
-    }
+}
+
+function StoppuhrUpdatenAnzeige() {
+    let mins = Math.trunc(timerSecondsTotal / 60);
+    let secs = timerSecondsTotal % 60;
+    let displayMins = mins < 10 ? "0" + mins : mins;
+    let displaySecs = secs < 10 ? "0" + secs : secs;
+    document.getElementById("p_Anzeige_Stoppuhr").innerText = displayMins + ":" + displaySecs;
     
-    document.getElementById("p_Anzeige_Stoppuhr").innerText = ShowTimerMinutes + " : " + ShowTimerSeconds; //zeit anzeigen
+    const circle = document.querySelector(".timer-circle-progress");
+    const pct = Math.max(0, timerSecondsTotal / maxTimerSeconds);
+    const offset = 534 - (pct * 534);
+    circle.style.strokeDashoffset = offset;
+}
+
+function zeigeRundenEndeStatus() {
+    const overlay = document.getElementById("overlay_aktive_runde");
+    overlay.classList.add("overlay-alarm");
+    
+    const beendenBtn = document.getElementById("button_manuellStoppuhrBeenden");
+    beendenBtn.innerText = "Overlay schließen";
+    beendenBtn.style.backgroundColor = "var(--accent-primary)";
+}
+
+function beendeAktiveRunde() {
+    clearInterval(timerAktiv);
+    
+    const overlay = document.getElementById("overlay_aktive_runde");
+    overlay.classList.remove("overlay-alarm");
+    overlay.style.display = "none";
+    
+    const beendenBtn = document.getElementById("button_manuellStoppuhrBeenden");
+    beendenBtn.innerText = "Runde vorzeitig beenden";
+    beendenBtn.style.backgroundColor = "";
+    
+    document.getElementById("seite_main").style.display = "flex";
+    
+    document.getElementById("span_Anzeige_reelleRunde").innerText = rundeZuZeigen + 1;
+    buchstabenUpdaten();
+    updateBeispiele();
+}
+
+function setupPresets() {
+    const presets = document.querySelectorAll(".preset-btn");
+    const inputZeit = document.getElementById("input_Stoppuhr_Zeit");
+
+    presets.forEach(btn => {
+        if (btn.dataset.time === "2" || btn.dataset.time === "2.0") {
+            btn.classList.add("active");
+            if (inputZeit) inputZeit.value = btn.dataset.time;
+        }
+    });
+
+    presets.forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            presets.forEach(p => p.classList.remove("active"));
+            e.target.classList.add("active");
+            if (inputZeit) inputZeit.value = e.target.dataset.time;
+        });
+    });
+
+    if (inputZeit) {
+        inputZeit.addEventListener("input", () => {
+            presets.forEach(p => p.classList.remove("active"));
+        });
+    }
 }
 
 function wecker() {
-    let context = new (window.AudioContext || window.webkitAudioContext)();
-    
-    function spieleTon(frequenz, dauer, lautstaerke, fadeDauer) {
-        const oscillator = context.createOscillator();
-        const gainNode = context.createGain();
-
-        oscillator.type = "sine"; // Sanfter Klang (Sinuswelle)
-        oscillator.frequency.setValueAtTime(frequenz, context.currentTime); // Frequenz einstellen
-        gainNode.gain.setValueAtTime(lautstaerke, context.currentTime); // Lautstärke einstellen
-
-        oscillator.connect(gainNode);
-        gainNode.connect(context.destination);
-
-        oscillator.start(context.currentTime); // Ton starten
-        oscillator.stop(context.currentTime + dauer); // Ton stoppen nach der Dauer
-
-        // Fade-out Effekt: Lautstärke langsam reduzieren
-        gainNode.gain.linearRampToValueAtTime(0, context.currentTime + fadeDauer); // Fade out über die gegebene Zeit
-    }
-
-    spieleTon(440, 3, 1, 2); 
+    if (!audioCtx) return;
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(440, audioCtx.currentTime);
+    gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    oscillator.start(audioCtx.currentTime);
+    oscillator.stop(audioCtx.currentTime + 2);
+    gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 2);
 }
 
+function setupDropdownToggle() {
+    const btn = document.getElementById("btn_dropdown_toggle");
+    const content = document.getElementById("dropdownContent");
+    
+    btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        content.classList.toggle("show");
+    });
 
-const kategorien = ["Stadt", "Land", "Fluss", "Tier", "Pflanze", "Beruf"];
+    document.addEventListener("click", () => {
+        content.classList.remove("show");
+    });
+}
 
 function generateDropdown() {
     const dropdownContent = document.getElementById("dropdownContent");
+    dropdownContent.replaceChildren();
+    const kategorien = ["Stadt", "Land", "Fluss", "Tier", "Pflanze", "Beruf"];
 
-    kategorien.forEach(function(kategorie) {
+    kategorien.forEach(kategorie => {
         const spanTag = document.createElement("span");
         spanTag.textContent = kategorie;
-
-        spanTag.addEventListener("click", function(){
+        spanTag.addEventListener("click", (e) => {
+            e.stopPropagation();
             aktuelleKategorie = kategorie;
-
             updateBeispiele();
+            dropdownContent.classList.remove("show");
+        });
+        dropdownContent.appendChild(spanTag);
+    });
+}
+
+function buildOrbit() {
+    const container = document.getElementById('orbit-buchstaben-container');
+    if(!container) return;
+    container.replaceChildren();
+    const temporaereBuchstaben = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"];
+
+    temporaereBuchstaben.forEach((buchstabe, index) => {
+        const btn = document.createElement('button');
+        btn.textContent = buchstabe;
+        btn.classList.add('fliegender-buchstabe');
+
+        if (!alleBuchstaben.includes(buchstabe)) {
+            btn.classList.add('abgewaehlt');
+        }
+
+        const winkel = ((index / 26) * 2 * Math.PI) - (Math.PI / 2);
+        const radiusX = 35 + Math.random() * 5;
+        const radiusY = 35 + Math.random() * 5;
+
+        btn.style.left = `${50 + Math.cos(winkel) * radiusX}%`;
+        btn.style.top = `${50 + Math.sin(winkel) * radiusY}%`;
+        btn.style.transform = 'translate(-50%, -50%)';
+        
+        btn.animate([
+            { transform: 'translate(-50%, -50%) translate(0px, 0px)' },
+            { transform: 'translate(-50%, -50%) translate(3px, -2px)' },
+            { transform: 'translate(-50%, -50%) translate(-2px, 3px)' },
+            { transform: 'translate(-50%, -50%) translate(0px, 0px)' }
+        ], {
+            duration: (4 + Math.random() * 3) * 1000,
+            iterations: Infinity,
+            direction: 'alternate',
+            easing: 'ease-in-out'
         });
 
-        dropdownContent.appendChild(spanTag);
-
+        btn.addEventListener('click', () => {
+            btn.classList.toggle('abgewaehlt');
+        });
+        container.appendChild(btn);
     });
-} // dropdown menü erstellen ( kategorien zum auswählen )
-
-generateDropdown();
-
-// Buchstaben generieren für das Orbit
-const container = document.getElementById('orbit-buchstaben-container');
-
-alleBuchstaben = new Array("A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z");
-
-alleBuchstaben.forEach((buchstabe, index) => {
-    const btn = document.createElement('button');
-    btn.textContent = buchstabe;
-    btn.classList.add('fliegender-buchstabe');
-
-    const winkel = ((index / 26) * 2 * Math.PI) - (Math.PI / 2);
-    const radiusX = 40 + Math.random() * 5; // Nutzt max. 45% der Bildschirmbreite nach links/rechts
-    const radiusY = 40 + Math.random() * 5; // Nutzt max. 45% der Bildschirmhöhe nach oben/unten
-
-    // Position absolut krisensicher in Prozent berechnen
-    const xProzent = 50 + Math.cos(winkel) * radiusX;
-    const yProzent = 50 + Math.sin(winkel) * radiusY;
-
-    btn.style.left = `${xProzent}%`;
-    btn.style.top = `${yProzent}%`;
-    btn.style.transform = 'translate(-50%, -50%)'; // Zentriert den Button perfekt auf seinem Punkt
-    
-    // Wir erstellen eine sanfte, individuelle Kreis-Bewegung via CSS-Variable oder direktem Keyframe-Ersatz
-    btn.style.animation = 'none'; // Schaltet das alte CSS-Schwanken aus
-    
-    // Ein leichtes, organisches Zittern/Kreisen simulieren:
-    const zufallZeit = 4 + Math.random() * 4; // 4 bis 8 Sekunden für eine sanfte Bewegung
-    btn.animate([
-        { transform: 'translate(-50%, -50%) translate(0px, 0px)' },
-        { transform: 'translate(-50%, -50%) translate(4px, -3px)' },
-        { transform: 'translate(-50%, -50%) translate(2px, 4px)' },
-        { transform: 'translate(-50%, -50%) translate(-4px, 2px)' },
-        { transform: 'translate(-50%, -50%) translate(0px, 0px)' }
-    ], {
-        duration: zufallZeit * 1000,
-        iterations: Infinity,
-        direction: 'alternate',
-        easing: 'ease-in-out'
-    });
-
-    btn.addEventListener('click', () => {
-        btn.classList.toggle('abgewaehlt');
-    });
-
-    container.appendChild(btn);
-});
-
+}
 
 function holeAusgewählteBuchstaben(){
-    return Array.from(document.querySelectorAll('.fliegender-buchstabe:not(.abgewaehlt)'))
-                .map(btn => btn.textContent);
+    return Array.from(document.querySelectorAll('.fliegender-buchstabe:not(.abgewaehlt)')).map(btn => btn.textContent);
 }
 
-
-function seiteWechseln(zielSeite){
-    const seiten = document.getElementsByClassName("unterseite");
-
-    for(let i = 0; i < seiten.length; i++){
-        seiten[i].style.display = "none"; //alle seiten verstecken
-    }
-
-    document.getElementById(zielSeite).style.display = "flex"; //zielseite anzeigen
+function updateWievieleAusgewaehltAnzeige() {
+    const len = alleBuchstaben.length;
+    document.getElementById("p_wievieleBuchstabenAusgewählt").innerText = len === 1 ? "1 Buchstabe ausgewählt" : len + " Buchstaben ausgewählt";
 }
 
-
-
-
-
-
-
-
-
-document.getElementById("button_neuesSpiel").addEventListener("click", function(){
-    let bestaetigung = confirm("neues Spiel starten und zur Buchstabenauswahl navigieren?");
-
-    if(bestaetigung){
-        seiteWechseln("seite_buchstaben_auswählen");
-    }
-});
-
-document.getElementById("btn_zur_seite_main").addEventListener("click", function(){
-    alleBuchstaben = holeAusgewählteBuchstaben();
-    console.log(alleBuchstaben);
-    if(alleBuchstaben.length === 0){
-        alert("Bitte wähle mindestens einen Buchstaben aus.");
-        return;
-    } else if(alleBuchstaben.length === 1){
-        document.getElementById("p_wievieleBuchstabenAusgewählt").innerText = "1 Buchstabe ausgewählt";
-    } else if(alleBuchstaben.length > 1 && alleBuchstaben.length <= 26){
-        document.getElementById("p_wievieleBuchstabenAusgewählt").innerText = alleBuchstaben.length + " Buchstaben ausgewählt";
-    }
-    shuffle(alleBuchstaben);
-    localStorage.setItem("aktuellesSpiel", JSON.stringify(alleBuchstaben));
-
-    seiteWechseln("seite_main");
-    neuesSpielStarten();
-});
-
+// Event Listeners
+document.getElementById("p_aktuelleRunde").addEventListener("click", starteAktiveRundeFlow);
+document.getElementById("button_manuellStoppuhrBeenden").addEventListener("click", beendeAktiveRunde);
 
 document.getElementById("p_Anzeige_buchstabe1").addEventListener("click", () => rad(false));
 document.getElementById("p_Anzeige_buchstabe2").addEventListener("click", () => rad(false));
 document.getElementById("p_Anzeige_buchstabe4").addEventListener("click", () => rad(true));
 document.getElementById("p_Anzeige_buchstabe5").addEventListener("click", () => rad(true));
 
-document.getElementById("p_aktuelleRunde").addEventListener("click", aktuelleRunde);
+document.getElementById("button_neuesSpiel").addEventListener("click", () => {
+    localStorage.setItem("hatSchonGespielt", "true");
+    updateNeuesSpielButtonVisuals();
+    
+    document.getElementById("seite_main").style.display = "none";
+    document.getElementById("seite_buchstaben_auswählen").style.display = "flex";
+});
 
-document.getElementById("input_Stoppuhr_Zeit").addEventListener("input", function() { zeitAnzeigen(), StoppuhrBeenden(), updateBeispiele() });
-document.getElementById("button_Stoppuhr_auslösen").addEventListener("click", StoppuhrAuslösen);
-document.getElementById("button_manuellStoppuhrBeenden").addEventListener("click", StoppuhrBeenden);
+document.getElementById("btn_zur_seite_main").addEventListener("click", () => {
+    const gewaehlt = holeAusgewählteBuchstaben();
+    if(gewaehlt.length === 0){
+        alert("Bitte wähle mindestens einen Buchstaben aus.");
+        return;
+    }
+    alleBuchstaben = gewaehlt;
+    shuffle(alleBuchstaben);
+    localStorage.setItem("aktuellesSpiel", JSON.stringify(alleBuchstaben));
+    
+    reelleRunde = -1;
+    rundeZuZeigen = 0;
+    localStorage.setItem("reelleRundeSpeichern", JSON.stringify(reelleRunde));
+    localStorage.setItem("rundeZuZeigenSpeichern", JSON.stringify(rundeZuZeigen));
+    
+    // Beispiele und Titel auch bei neuer Buchstabenauswahl komplett zurücksetzen
+    aktuelleKategorie = null;
+    updateBeispiele();
+    
+    document.getElementById("span_Anzeige_reelleRunde").innerText = "1";
+    updateWievieleAusgewaehltAnzeige();
+    updateNeuesSpielButtonVisuals();
+    buchstabenUpdaten();
+    
+    document.getElementById("seite_buchstaben_auswählen").style.display = "none";
+    document.getElementById("seite_main").style.display = "flex";
+});
+
+document.getElementById("btn_auswahl_zuruecksetzen").addEventListener("click", () => {
+    document.querySelectorAll('.fliegender-buchstabe').forEach(btn => {
+        btn.classList.remove('abgewaehlt');
+    });
+});
