@@ -60,7 +60,7 @@ body {
 
 section {
   background-color: var(--card-bg);
-  border: 1px solid var(--border-color);
+  border: 2px solid var(--border-color);
   border-radius: var(--radius-medium);
   padding: var(--spacing-sm);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
@@ -130,14 +130,14 @@ button:active { transform: scale(0.98); }
 }
 .preset-btn {
   background-color: var(--card-bg);
-  border: 1px solid var(--border-color);
+  border: 2px solid var(--border-color);
   color: var(--text-color);
   flex: 1 1 calc(50% - var(--spacing-xs)); /* Erzwingt paarweises Umbrechen */
   min-width: 80px;
 }
 
 .preset-btn.active {
-  border: 1px solid var(--accent-primary);
+  border: 2px solid var(--accent-primary);
 }
 
 #input_Stoppuhr_Zeit {
@@ -218,7 +218,7 @@ button:active { transform: scale(0.98); }
   align-items: center;
   justify-content: center;
   aspect-ratio: 1 / 1;
-  border: 1px solid var(--border-color);
+  border: 2px solid var(--border-color);
   border-radius: var(--radius-small);
   background-color: var(--card-bg);
   font-weight: bold;
@@ -259,7 +259,7 @@ button:active { transform: scale(0.98); }
   position: relative; 
   width: 100%;
   background-color: var(--bg-color);
-  border: 1px solid var(--border-color);
+  border: 2px solid var(--border-color);
   border-radius: var(--radius-small);
   margin-top: var(--spacing-xs);
   box-sizing: border-box;

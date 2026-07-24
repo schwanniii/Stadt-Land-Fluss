@@ -10,7 +10,7 @@
 <br>
 
 
-## Funktionen
+## Beschreibung
 
 * **Buchstaben auswählen:** Wähle Buchstaben ab und spiele z.B. ohne Q,X,Y und Z.
 * **zufällige Buchstaben:** Starte die neue Runde mit einem neuen, zufälligen Buchstaben.
