@@ -2,7 +2,7 @@
 
 # Stadt-Land-Fluss (Begleiter-App)
 
-## [im Browser öffnen →](https://schwanniii.github.io/Stadt-Land-Fluss/)
+## [im Browser öffnen →](https://jannis-buesing.github.io/Stadt-Land-Fluss/)
 
   <img src="./preview/Stadt-Land-Fluss.gif" alt="Anwendungsvorschau" width="100%">
 </div>
@@ -22,6 +22,6 @@
 
 ## Feedback
 
-[Fehler melden](https://github.com/schwanniii/Stadt-Land-Fluss/issues) - [Feature vorschlagen](https://github.com/schwanniii/Stadt-Land-Fluss/issues)
+[Fehler melden](https://github.com/jannis-buesing/Stadt-Land-Fluss/issues) - [Feature vorschlagen](https://github.com/jannis-buesing/Stadt-Land-Fluss/issues)
 
 </div>
